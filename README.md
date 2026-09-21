@@ -2,11 +2,24 @@
 
 by vdasus
 
-Tray utility that saves the position and size of selected windows into named profiles and restores them later.
-A rewrite of [TANWindowMgr](../TANWindowMgr-master) on .NET 10: plain Win32 API, Native AOT, a single ~2 MB
-`winmangrus.exe` with no runtime dependency, plus `winmangrus.json` next to it.
+Lightweight Windows window layout manager. Save the position and size of your windows into named profiles and restore
+them with one click, or automatically when monitors are connected or disconnected, or the PC wakes from sleep. Useful
+with multiple monitors, docking stations, and remote desktop sessions, where Windows tends to move windows around.
+
+- Single ~2 MB `winmangrus.exe`, no installation, no .NET runtime required (Native AOT), ~12 MB RAM in the tray.
+- Settings in `winmangrus.json` next to the executable (portable).
+- Restores several windows of the same program individually; supports virtual desktops, per-monitor DPI, and
+  maximized or minimized windows.
+- Command-line switches for scripts and scheduled tasks.
+
+A rewrite of [TANWindowMgr](https://github.com/Todd1561/TANWindowMgr) by Todd Nelson on .NET 10 with the plain Win32 API.
 
 Requirements: Windows 10 or 11, x64.
+
+## Download
+
+Get `winmangrus.exe` from [Releases](https://github.com/vdasus/winmangrus/releases), put it in any folder, and run it.
+Enable *Start with Windows* in the tray menu if needed.
 
 ## Usage
 
@@ -70,3 +83,14 @@ Windows SDK import libraries are then downloaded from NuGet (`Microsoft.Windows.
 ```
 dotnet publish -c Release -o publish -p:MsvcDir="C:\Program Files\Microsoft Visual Studio\18\Professional\VC\Tools\MSVC\14.51.36231"
 ```
+
+## Authorship
+
+The code was written by [Claude](https://claude.com/claude-code) (Anthropic) under the supervision of vdasus, who defined
+the requirements, reviewed, and tested the result.
+
+## Disclaimer
+
+This software is provided "as is", without warranty of any kind, express or implied. The author accepts no
+responsibility or liability for any damage, data loss, or other consequences arising from its use. Use it at your own
+risk. See [LICENSE](LICENSE).
