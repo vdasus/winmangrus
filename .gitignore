@@ -1,0 +1,6 @@
+bin/
+obj/
+publish/
+*.json.bad
+*.json.tmp
+winmangrus.json

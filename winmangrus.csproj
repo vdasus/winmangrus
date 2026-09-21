@@ -1,0 +1,67 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>winmangrus.ico</ApplicationIcon>
+    <!-- Version lives in version.txt; every publish bumps the patch number (see BumpVersion). -->
+    <Version>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\version.txt').Trim())</Version>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <Authors>vdasus</Authors>
+    <Company>vdasus</Company>
+    <Product>winmangrus</Product>
+    <Copyright>by vdasus</Copyright>
+
+    <!-- Native AOT, size first -->
+    <PublishAot>true</PublishAot>
+    <OptimizationPreference>Size</OptimizationPreference>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+    <StackTraceSupport>false</StackTraceSupport>
+    <EventSourceSupport>false</EventSourceSupport>
+    <DebuggerSupport>false</DebuggerSupport>
+    <GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+
+  <Target Name="BumpVersion" BeforeTargets="PrepareForBuild" Condition="'$(_IsPublishing)' == 'true' and '$(NoVersionBump)' != 'true'">
+    <PropertyGroup>
+      <Version>$(Version.Split('.')[0]).$(Version.Split('.')[1]).$([MSBuild]::Add($(Version.Split('.')[2]), 1))</Version>
+      <VersionPrefix>$(Version)</VersionPrefix>
+      <AssemblyVersion>$(Version)</AssemblyVersion>
+      <FileVersion>$(Version)</FileVersion>
+      <InformationalVersion>$(Version)</InformationalVersion>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(MSBuildProjectDirectory)\version.txt" Lines="$(Version)" Overwrite="true" />
+    <Message Importance="high" Text="winmangrus version $(Version)" />
+  </Target>
+
+  <!--
+    Fallback for machines that have MSVC link.exe but not the full "Desktop development with C++"
+    workload / Windows SDK: Windows SDK import libraries come from NuGet. Pass -p:MsvcDir=<MSVC tools folder>.
+  -->
+  <PropertyGroup Condition="'$(MsvcDir)' != ''">
+    <IlcUseEnvironmentalTools>true</IlcUseEnvironmentalTools>
+    <WinSdkNuGetVersion>10.0.26100.9169</WinSdkNuGetVersion>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(MsvcDir)' != ''">
+    <PackageDownload Include="Microsoft.Windows.SDK.CPP.x64" Version="[$(WinSdkNuGetVersion)]" />
+  </ItemGroup>
+  <Target Name="UseMsvcDir" BeforeTargets="LinkNative" Condition="'$(MsvcDir)' != ''">
+    <PropertyGroup>
+      <CppLinker>$(MsvcDir)\bin\Hostx64\x64\link.exe</CppLinker>
+      <_WinSdkLib>$(NuGetPackageRoot)microsoft.windows.sdk.cpp.x64\$(WinSdkNuGetVersion)\c\</_WinSdkLib>
+    </PropertyGroup>
+    <ItemGroup>
+      <AdditionalNativeLibraryDirectories Include="$(MsvcDir)\lib\x64;$(MsvcDir)\lib\onecore\x64;$(_WinSdkLib)um\x64;$(_WinSdkLib)ucrt\x64" />
+    </ItemGroup>
+  </Target>
+
+</Project>
