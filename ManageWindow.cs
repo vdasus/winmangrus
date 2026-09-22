@@ -149,9 +149,14 @@ static unsafe class ManageWindow
 
     static string ComboItem(int index)
     {
-        char* buf = stackalloc char[512];
-        int len = (int)SendMessageW(_combo, CB_GETLBTEXT, index, (nint)buf);
-        return len > 0 ? new string(buf, 0, len) : "";
+        int max = (int)SendMessageW(_combo, CB_GETLBTEXTLEN, index, 0); // CB_GETLBTEXT takes no buffer size
+        if (max <= 0) return "";
+        var buf = new char[max + 1];
+        fixed (char* p = buf)
+        {
+            int len = (int)SendMessageW(_combo, CB_GETLBTEXT, index, (nint)p);
+            return len > 0 ? new string(p, 0, len) : "";
+        }
     }
 
     static void OnCommand(int id, int code)

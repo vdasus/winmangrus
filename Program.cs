@@ -158,28 +158,35 @@ static unsafe class Program
         var s = Settings.Load();
         var auto = Layout.AutoProfile(s);
         nint menu = CreatePopupMenu();
-        AppendMenuW(menu, MF_GRAYED, 0, About);
-        AppendMenuW(menu, MF_SEPARATOR, 0, null);
-
-        for (int i = 0; i < s.Profiles.Count; i++)
+        int cmd;
+        try
         {
-            AppendMenuW(menu, MF_STRING, IdProfileBase + i, "Restore: " + s.Profiles[i].Name.Replace("&", "&&"));
-            if (s.Profiles[i] == auto) SetMenuDefaultItem(menu, (uint)(IdProfileBase + i), 0); // bold = matches current monitors
-        }
-        if (s.Profiles.Count == 0) AppendMenuW(menu, MF_GRAYED, 0, "No saved profiles");
-        AppendMenuW(menu, MF_SEPARATOR, 0, null);
-        AppendMenuW(menu, MF_STRING, IdManage, "Manage profiles...");
-        AppendMenuW(menu, s.AutoRestore ? MF_CHECKED : MF_STRING, IdAutoRestore, "Auto-restore on display change / wake");
-        AppendMenuW(menu, Startup.Enabled ? MF_CHECKED : MF_STRING, IdStartup, "Start with Windows");
-        AppendMenuW(menu, MF_SEPARATOR, 0, null);
-        AppendMenuW(menu, MF_STRING, IdExit, "Exit");
+            AppendMenuW(menu, MF_GRAYED, 0, About);
+            AppendMenuW(menu, MF_SEPARATOR, 0, null);
 
-        POINT pt;
-        GetCursorPos(&pt);
-        SetForegroundWindow(h); // required, otherwise the menu does not close on outside click
-        int cmd = TrackPopupMenuEx(menu, TPM_RETURNCMD | TPM_RIGHTBUTTON | TPM_NONOTIFY, pt.X, pt.Y, h, 0);
-        PostMessageW(h, 0, 0, 0);
-        DestroyMenu(menu);
+            for (int i = 0; i < s.Profiles.Count; i++)
+            {
+                AppendMenuW(menu, MF_STRING, IdProfileBase + i, "Restore: " + s.Profiles[i].Name.Replace("&", "&&"));
+                if (s.Profiles[i] == auto) SetMenuDefaultItem(menu, (uint)(IdProfileBase + i), 0); // bold = matches current monitors
+            }
+            if (s.Profiles.Count == 0) AppendMenuW(menu, MF_GRAYED, 0, "No saved profiles");
+            AppendMenuW(menu, MF_SEPARATOR, 0, null);
+            AppendMenuW(menu, MF_STRING, IdManage, "Manage profiles...");
+            AppendMenuW(menu, s.AutoRestore ? MF_CHECKED : MF_STRING, IdAutoRestore, "Auto-restore on display change / wake");
+            AppendMenuW(menu, Startup.Enabled ? MF_CHECKED : MF_STRING, IdStartup, "Start with Windows");
+            AppendMenuW(menu, MF_SEPARATOR, 0, null);
+            AppendMenuW(menu, MF_STRING, IdExit, "Exit");
+
+            POINT pt;
+            GetCursorPos(&pt);
+            SetForegroundWindow(h); // required, otherwise the menu does not close on outside click
+            cmd = TrackPopupMenuEx(menu, TPM_RETURNCMD | TPM_RIGHTBUTTON | TPM_NONOTIFY, pt.X, pt.Y, h, 0);
+            PostMessageW(h, 0, 0, 0);
+        }
+        finally
+        {
+            DestroyMenu(menu);
+        }
 
         switch (cmd)
         {
