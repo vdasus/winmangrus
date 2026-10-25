@@ -21,6 +21,9 @@ Requirements: Windows 10 or 11, x64.
 Get `winmangrus.exe` from [Releases](https://github.com/vdasus/winmangrus/releases), put it in any folder, and run it.
 Enable *Start with Windows* in the tray menu if needed.
 
+For the *Desktop hotkeys*, also download `VirtualDesktopAccessor.dll` from the same release and put it in the same
+folder as `winmangrus.exe`. Without it, everything else works; only the hotkeys cannot be enabled.
+
 ## Usage
 
 - **Left click** on the tray icon opens *Manage profiles*: pick a profile (or create one with *New...*), check windows,
