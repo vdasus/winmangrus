@@ -21,6 +21,9 @@ Requirements: Windows 10 or 11, x64.
 Get `winmangrus.exe` from [Releases](https://github.com/vdasus/winmangrus/releases), put it in any folder, and run it.
 Enable *Start with Windows* in the tray menu if needed.
 
+If your network blocks downloading `.exe` files, take `winmangrus-<version>-win-x64.zip` from the same release instead.
+It contains `winmangrus.exe`, `VirtualDesktopAccessor.dll` and both licenses; unpack it into any folder.
+
 For the *Desktop hotkeys*, also download `VirtualDesktopAccessor.dll` from the same release and put it in the same
 folder as `winmangrus.exe`. Without it, everything else works; only the hotkeys cannot be enabled.
 
@@ -84,6 +87,22 @@ Requires .NET SDK 10 and the Visual Studio "Desktop development with C++" worklo
 
 ```
 dotnet publish -c Release -o publish
+```
+
+The publish folder then contains `winmangrus.exe`, `VirtualDesktopAccessor.dll`, the licenses, and
+`winmangrus-<version>-win-x64.zip` with all of them, ready to attach to a GitHub release.
+
+### Release
+
+Pushing a tag `v<version>` runs the `Release` GitHub Actions workflow: it builds on `windows-latest` and attaches
+`winmangrus.exe`, `VirtualDesktopAccessor.dll` and the zip to the GitHub release of that tag, creating the release with
+generated notes if it does not exist yet. The tag must match `version.txt`, otherwise the workflow fails.
+
+```
+echo 1.2.1 > version.txt
+git commit -am "chore: bump version to 1.2.1"
+git tag v1.2.1
+git push origin main v1.2.1
 ```
 
 If only MSVC `link.exe` is installed without the full workload and the Windows SDK, pass the MSVC tools folder; the

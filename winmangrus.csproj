@@ -34,7 +34,26 @@
   <!-- VirtualDesktopAccessor.dll 2024-12-16-windows11 (MIT), used by the desktop hotkeys. -->
   <ItemGroup>
     <None Include="lib\VirtualDesktopAccessor.dll" Link="VirtualDesktopAccessor.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="lib\VirtualDesktopAccessor-LICENSE.txt" Link="VirtualDesktopAccessor-LICENSE.txt" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="LICENSE" Link="LICENSE.txt" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
+
+  <!-- Bundles the publish folder into winmangrus-<version>-win-x64.zip inside it, for networks that block .exe downloads. -->
+  <Target Name="ZipPublish" AfterTargets="Publish">
+    <PropertyGroup>
+      <_ZipName>$(Product)-$(Version)-$(RuntimeIdentifier).zip</_ZipName>
+      <_ZipStage>$(IntermediateOutputPath)zip\</_ZipStage>
+    </PropertyGroup>
+    <ItemGroup>
+      <_OldZip Include="$(PublishDir)$(Product)-*.zip" />
+      <_ZipFile Include="$(PublishDir)winmangrus.exe;$(PublishDir)VirtualDesktopAccessor.dll;$(PublishDir)LICENSE.txt;$(PublishDir)VirtualDesktopAccessor-LICENSE.txt" />
+    </ItemGroup>
+    <Delete Files="@(_OldZip)" />
+    <RemoveDir Directories="$(_ZipStage)" />
+    <Copy SourceFiles="@(_ZipFile)" DestinationFolder="$(_ZipStage)" />
+    <ZipDirectory SourceDirectory="$(_ZipStage)" DestinationFile="$(PublishDir)$(_ZipName)" Overwrite="true" />
+    <Message Importance="high" Text="$(PublishDir)$(_ZipName)" />
+  </Target>
 
   <Target Name="BumpVersion" BeforeTargets="PrepareForBuild" Condition="'$(_IsPublishing)' == 'true' and '$(NoVersionBump)' != 'true'">
     <PropertyGroup>

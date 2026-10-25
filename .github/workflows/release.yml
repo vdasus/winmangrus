@@ -1,0 +1,49 @@
+# Builds the Native AOT release on a tag push (v1.2.3) and attaches exe, DLL and zip to the GitHub release.
+# Run it manually (workflow_dispatch) to test the build: the output is kept as a workflow artifact, no release is made.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Check that the tag matches version.txt
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        run: |
+          $v = (Get-Content version.txt -Raw).Trim()
+          if ("v$v" -ne $env:GITHUB_REF_NAME) { throw "Tag $env:GITHUB_REF_NAME does not match version.txt ($v)" }
+
+      - name: Publish
+        run: dotnet publish -c Release -o publish -p:NoVersionBump=true
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: winmangrus
+          path: publish/*
+
+      # A release created by hand (with written notes) keeps its notes; only the files are replaced.
+      - name: Create or update the release
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $v = (Get-Content version.txt -Raw).Trim()
+          $files = 'publish/winmangrus.exe', 'publish/VirtualDesktopAccessor.dll', "publish/winmangrus-$v-win-x64.zip"
+          gh release view $env:GITHUB_REF_NAME *> $null
+          if ($LASTEXITCODE -eq 0) { gh release upload $env:GITHUB_REF_NAME @files --clobber }
+          else { gh release create $env:GITHUB_REF_NAME @files --title "winmangrus $v" --generate-notes }
