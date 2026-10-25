@@ -6,7 +6,8 @@ namespace Winmangrus;
 static unsafe class Program
 {
     const uint WM_TRAY = WM_APP + 1;
-    const int IdManage = 1, IdAutoRestore = 2, IdStartup = 3, IdExit = 4, IdProfileBase = 1000;
+    const int IdManage = 1, IdAutoRestore = 2, IdStartup = 3, IdExit = 4, IdHotkeyBase = 100, IdProfileBase = 1000;
+    const int MaxDesktops = 9;
     const nint TimerAutoRestore = 1;
     public const string Title = "winmangrus";
     public static readonly string Version = typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "?";
@@ -29,6 +30,7 @@ static unsafe class Program
 
     static nint _hwnd;
     static uint _taskbarCreated;
+    static readonly HashSet<int> _hotkeys = []; // desktop numbers whose Ctrl+N is registered
     public static nint Icon { get; private set; }
 
     static int Main(string[] args)
@@ -68,6 +70,7 @@ static unsafe class Program
         // Hidden top-level window (not message-only) so it receives WM_DISPLAYCHANGE and WM_POWERBROADCAST.
         _hwnd = CreateWindowExW(0, "winmangrus.main", Title, 0, 0, 0, 0, 0, 0, 0, Instance, 0);
         AddTrayIcon();
+        RegisterSavedHotkeys();
 
         MSG msg;
         while (GetMessageW(&msg, 0, 0, 0) > 0)
@@ -129,6 +132,9 @@ static unsafe class Program
                 case WM_POWERBROADCAST when w == PBT_APMRESUMEAUTOMATIC:
                     SetTimer(h, TimerAutoRestore, 5000, 0);
                     return 1;
+                case WM_HOTKEY:
+                    GoToDesktopNumber((int)w - 1); // hotkey id is the 1-based desktop number
+                    return 0;
                 case WM_TIMER when w == TimerAutoRestore:
                     KillTimer(h, TimerAutoRestore);
                     AutoRestore();
@@ -145,6 +151,44 @@ static unsafe class Program
             MessageBoxW(0, ex.Message, Title, MB_OK | MB_ICONERROR);
         }
         return DefWindowProcW(h, m, w, l);
+    }
+
+    static bool RegisterDesktopHotkey(int n) =>
+        RegisterHotKey(_hwnd, n, MOD_CONTROL | MOD_NOREPEAT, (uint)('0' + n)) != 0 && _hotkeys.Add(n);
+
+    static void RegisterSavedHotkeys()
+    {
+        var failed = Settings.Load().DesktopHotkeys.Where(n => n is >= 1 and <= MaxDesktops && !RegisterDesktopHotkey(n)).ToList();
+        if (failed.Count > 0)
+            MessageBoxW(0, $"Already in use by another program: {string.Join(", ", failed.Select(n => $"Ctrl+{n}"))}", About, MB_OK | MB_ICONERROR);
+    }
+
+    static void ToggleDesktopHotkey(Settings s, int n)
+    {
+        if (_hotkeys.Remove(n))
+        {
+            UnregisterHotKey(_hwnd, n);
+            s.DesktopHotkeys.Remove(n);
+        }
+        else
+        {
+            try
+            {
+                GetDesktopCount(); // fail now rather than on the first key press
+            }
+            catch (DllNotFoundException)
+            {
+                MessageBoxW(0, "VirtualDesktopAccessor.dll not found next to winmangrus.exe.", About, MB_OK | MB_ICONERROR);
+                return;
+            }
+            if (!RegisterDesktopHotkey(n))
+            {
+                MessageBoxW(0, $"Ctrl+{n} is already in use by another program.", About, MB_OK | MB_ICONERROR);
+                return;
+            }
+            if (!s.DesktopHotkeys.Contains(n)) s.DesktopHotkeys.Add(n);
+        }
+        s.Save();
     }
 
     static void AutoRestore()
@@ -174,6 +218,10 @@ static unsafe class Program
             AppendMenuW(menu, MF_STRING, IdManage, "Manage profiles...");
             AppendMenuW(menu, s.AutoRestore ? MF_CHECKED : MF_STRING, IdAutoRestore, "Auto-restore on display change / wake");
             AppendMenuW(menu, Startup.Enabled ? MF_CHECKED : MF_STRING, IdStartup, "Start with Windows");
+            nint hotkeys = CreatePopupMenu(); // destroyed together with the parent menu
+            for (int n = 1; n <= MaxDesktops; n++)
+                AppendMenuW(hotkeys, _hotkeys.Contains(n) ? MF_CHECKED : MF_STRING, IdHotkeyBase + n, $"Ctrl+{n}: desktop {n}");
+            AppendMenuW(menu, MF_POPUP, hotkeys, "Desktop hotkeys");
             AppendMenuW(menu, MF_SEPARATOR, 0, null);
             AppendMenuW(menu, MF_STRING, IdExit, "Exit");
 
@@ -191,6 +239,7 @@ static unsafe class Program
         switch (cmd)
         {
             case >= IdProfileBase: Layout.Restore(s.Profiles[cmd - IdProfileBase]); break;
+            case > IdHotkeyBase and <= IdHotkeyBase + MaxDesktops: ToggleDesktopHotkey(s, cmd - IdHotkeyBase); break;
             case IdManage: ManageWindow.Show(); break;
             case IdAutoRestore: s.AutoRestore = !s.AutoRestore; s.Save(); break;
             case IdStartup: Startup.Enabled = !Startup.Enabled; break;

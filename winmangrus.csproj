@@ -31,6 +31,11 @@
     <DebugType>none</DebugType>
   </PropertyGroup>
 
+  <!-- VirtualDesktopAccessor.dll 2024-12-16-windows11 (MIT), used by the desktop hotkeys. -->
+  <ItemGroup>
+    <None Include="lib\VirtualDesktopAccessor.dll" Link="VirtualDesktopAccessor.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <Target Name="BumpVersion" BeforeTargets="PrepareForBuild" Condition="'$(_IsPublishing)' == 'true' and '$(NoVersionBump)' != 'true'">
     <PropertyGroup>
       <Version>$(Version.Split('.')[0]).$(Version.Split('.')[1]).$([MSBuild]::Add($(Version.Split('.')[2]), 1))</Version>

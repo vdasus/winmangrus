@@ -31,6 +31,11 @@ Enable *Start with Windows* in the tray menu if needed.
   - *Auto-restore on display change / wake*: when monitors are connected, disconnected, or the PC wakes from sleep,
     restore the most recently saved profile whose monitor layout matches the current one.
   - *Start with Windows*: adds or removes `HKCU\...\CurrentVersion\Run\winmangrus`.
+  - *Desktop hotkeys*: enable or disable `Ctrl+1` ... `Ctrl+9` one by one; each switches to that virtual desktop.
+    All are disabled by default. Requires `VirtualDesktopAccessor.dll` next to `winmangrus.exe`; `dotnet publish`
+    copies it there from `lib/` (see [Third-party components](#third-party-components)). An enabled hotkey is taken globally, so applications no longer receive it
+    (for example, `Ctrl+1` for browser tabs). If another program (such as AutoHotkey) already holds the key, enabling
+    it fails with a message.
 
 Windows are matched by executable name and window class. An exact title match is preferred, so several windows of the
 same program (browsers, terminals) are restored individually when their titles did not change.
@@ -83,6 +88,16 @@ Windows SDK import libraries are then downloaded from NuGet (`Microsoft.Windows.
 ```
 dotnet publish -c Release -o publish -p:MsvcDir="C:\Program Files\Microsoft Visual Studio\18\Professional\VC\Tools\MSVC\14.51.36231"
 ```
+
+## Third-party components
+
+`lib/VirtualDesktopAccessor.dll` is a copy of [VirtualDesktopAccessor](https://github.com/Ciantic/VirtualDesktopAccessor)
+by Jari Pennanen (Ciantic), release `2024-12-16-windows11`, distributed under the MIT license
+(`lib/VirtualDesktopAccessor-LICENSE.txt`). It is stored in the repository so that builds do not depend on a download.
+SHA-256: `8740c572a1c000e3b87ffeb1e4c397eae9af3bd4a2abdc3bcffacab4493f8ff5`.
+
+The DLL relies on undocumented Windows interfaces that can change between Windows builds. If the desktop hotkeys stop
+working after a major Windows update, replace the file with a newer release.
 
 ## Authorship
 

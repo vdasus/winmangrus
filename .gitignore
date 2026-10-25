@@ -4,3 +4,4 @@ publish/
 *.json.bad
 *.json.tmp
 winmangrus.json
+tmp/

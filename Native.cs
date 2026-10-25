@@ -88,7 +88,7 @@ static unsafe partial class Native
 {
     // Messages
     public const uint WM_DESTROY = 0x0002, WM_SIZE = 0x0005, WM_CLOSE = 0x0010, WM_GETMINMAXINFO = 0x0024,
-        WM_SETFONT = 0x0030, WM_DISPLAYCHANGE = 0x007E, WM_COMMAND = 0x0111, WM_TIMER = 0x0113,
+        WM_SETFONT = 0x0030, WM_DISPLAYCHANGE = 0x007E, WM_COMMAND = 0x0111, WM_TIMER = 0x0113, WM_HOTKEY = 0x0312,
         WM_LBUTTONUP = 0x0202, WM_RBUTTONUP = 0x0205, WM_POWERBROADCAST = 0x0218, WM_DPICHANGED = 0x02E0, WM_APP = 0x8000;
     public const nint PBT_APMRESUMEAUTOMATIC = 0x12;
 
@@ -105,7 +105,10 @@ static unsafe partial class Native
     public const uint SWP_NOMOVE = 2, SWP_NOZORDER = 4, SWP_NOACTIVATE = 0x10;
 
     // Menus
-    public const uint MF_STRING = 0, MF_GRAYED = 1, MF_CHECKED = 8, MF_SEPARATOR = 0x800;
+    public const uint MF_STRING = 0, MF_GRAYED = 1, MF_CHECKED = 8, MF_POPUP = 0x10, MF_SEPARATOR = 0x800;
+
+    // Hotkeys
+    public const uint MOD_CONTROL = 2, MOD_NOREPEAT = 0x4000;
     public const uint TPM_RIGHTBUTTON = 2, TPM_NONOTIFY = 0x80, TPM_RETURNCMD = 0x100;
 
     // Combo box / list view
@@ -198,6 +201,12 @@ static unsafe partial class Native
     [LibraryImport("ole32.dll")] public static partial int CoCreateInstance(Guid* clsid, nint outer, uint context, Guid* iid, nint* obj);
     [LibraryImport("user32.dll")] public static partial int EnableWindow(nint h, int enable);
     [LibraryImport("user32.dll")] public static partial nint SetFocus(nint h);
+    [LibraryImport("user32.dll")] public static partial int RegisterHotKey(nint h, int id, uint modifiers, uint vk);
+    [LibraryImport("user32.dll")] public static partial int UnregisterHotKey(nint h, int id);
+
+    // VirtualDesktopAccessor.dll (github.com/Ciantic/VirtualDesktopAccessor), loaded from the executable's folder on first call
+    [LibraryImport("VirtualDesktopAccessor.dll")] public static partial int GetDesktopCount();
+    [LibraryImport("VirtualDesktopAccessor.dll")] public static partial int GoToDesktopNumber(int number);
 
     public static nint Instance => GetModuleHandleW(null);
 

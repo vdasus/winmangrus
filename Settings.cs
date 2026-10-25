@@ -30,6 +30,8 @@ sealed class Profile
 sealed class Settings
 {
     public bool AutoRestore { get; set; } = true;
+    /// <summary>Desktop numbers (1-9) whose Ctrl+N hotkey switches to that virtual desktop.</summary>
+    public List<int> DesktopHotkeys { get; set; } = [];
     public List<Profile> Profiles { get; set; } = [];
 
     // Relaxed escaping keeps non-ASCII window titles readable in the file.
