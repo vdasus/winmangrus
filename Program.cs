@@ -6,10 +6,11 @@ namespace Winmangrus;
 static unsafe class Program
 {
     const uint WM_TRAY = WM_APP + 1;
-    const int IdManage = 1, IdAutoRestore = 2, IdStartup = 3, IdExit = 4, IdHotkeyBase = 100, IdProfileBase = 1000;
+    const int IdManage = 1, IdAutoRestore = 2, IdStartup = 3, IdExit = 4, IdReleases = 5, IdHotkeyBase = 100, IdProfileBase = 1000;
     const int MaxDesktops = 9;
     const nint TimerAutoRestore = 1;
     public const string Title = "winmangrus";
+    const string ReleasesUrl = "https://github.com/vdasus/winmangrus/releases";
     public static readonly string Version = typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "?";
     public static readonly string About = $"{Title} {Version} by vdasus";
 
@@ -223,6 +224,7 @@ static unsafe class Program
                 AppendMenuW(hotkeys, _hotkeys.Contains(n) ? MF_CHECKED : MF_STRING, IdHotkeyBase + n, $"Ctrl+{n}: desktop {n}");
             AppendMenuW(menu, MF_POPUP, hotkeys, "Desktop hotkeys");
             AppendMenuW(menu, MF_SEPARATOR, 0, null);
+            AppendMenuW(menu, MF_STRING, IdReleases, "Releases page...");
             AppendMenuW(menu, MF_STRING, IdExit, "Exit");
 
             POINT pt;
@@ -243,6 +245,7 @@ static unsafe class Program
             case IdManage: ManageWindow.Show(); break;
             case IdAutoRestore: s.AutoRestore = !s.AutoRestore; s.Save(); break;
             case IdStartup: Startup.Enabled = !Startup.Enabled; break;
+            case IdReleases: ShellExecuteW(0, null, ReleasesUrl, null, null, SW_SHOW); break;
             case IdExit: DestroyWindow(h); break;
         }
     }

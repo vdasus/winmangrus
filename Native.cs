@@ -189,6 +189,8 @@ static unsafe partial class Native
     [LibraryImport("shell32.dll")] public static partial int Shell_NotifyIconW(uint msg, NOTIFYICONDATAW* data);
     [LibraryImport("shell32.dll", StringMarshalling = StringMarshalling.Utf16)]
     public static partial uint ExtractIconExW(string file, int index, nint* large, nint* small, uint count);
+    [LibraryImport("shell32.dll", StringMarshalling = StringMarshalling.Utf16)]
+    public static partial nint ShellExecuteW(nint h, string? verb, string file, string? args, string? dir, int show);
     [LibraryImport("kernel32.dll")] public static partial nint GetModuleHandleW(char* name);
     [LibraryImport("kernel32.dll")] public static partial nint OpenProcess(uint access, int inherit, uint pid);
     [LibraryImport("kernel32.dll")] public static partial int QueryFullProcessImageNameW(nint process, uint flags, char* buf, uint* size);
