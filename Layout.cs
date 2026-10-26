@@ -29,7 +29,7 @@ static unsafe class Layout
         return 1;
     }
 
-    static LiveWindow? Describe(nint h)
+    internal static LiveWindow? Describe(nint h)
     {
         const uint GW_OWNER = 4, DWMWA_CLOAKED = 14;
         if (IsWindowVisible(h) == 0 || GetWindow(h, GW_OWNER) != 0 || IsHungAppWindow(h) != 0) return null;
@@ -48,6 +48,18 @@ static unsafe class Layout
         GetWindowThreadProcessId(h, &pid);
         if (pid == (uint)Environment.ProcessId) return null;
         return new LiveWindow(h, ExeName(pid), cls, title);
+    }
+
+    /// <summary>Topmost window, in Z order, that Describe accepts and that is on the current virtual desktop; 0 if none.</summary>
+    public static nint TopWindowOnCurrentDesktop()
+    {
+        const uint GW_HWNDNEXT = 2;
+        for (var h = GetTopWindow(0); h != 0; h = GetWindow(h, GW_HWNDNEXT))
+        {
+            try { if (Describe(h) != null && IsWindowOnCurrentVirtualDesktop(h) == 1) return h; }
+            catch { /* window vanished mid-query */ }
+        }
+        return 0;
     }
 
     static nint _desktopManager;

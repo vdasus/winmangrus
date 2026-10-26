@@ -41,7 +41,8 @@ folder as `winmangrus.exe`. Without it, everything else works; only the hotkeys 
     All are disabled by default. Requires `VirtualDesktopAccessor.dll` next to `winmangrus.exe`; `dotnet publish`
     copies it there from `lib/` (see [Third-party components](#third-party-components)). An enabled hotkey is taken
     globally, so applications no longer receive it (for example, `Ctrl+1` for browser tabs). If another program (such
-    as AutoHotkey) already holds the key, enabling it fails with a message.
+    as AutoHotkey) already holds the key, enabling it fails with a message. After a switch, the window that was
+    active when you last left that desktop with a hotkey gets the focus back (or the topmost window there).
   - *Releases page...*: opens the GitHub releases page in the browser to check for a newer version.
 
 Windows are matched by executable name and window class. An exact title match is preferred, so several windows of the

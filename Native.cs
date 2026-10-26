@@ -14,6 +14,10 @@ struct WINDOWPLACEMENT { public int Length, Flags, ShowCmd; public POINT MinPosi
 [StructLayout(LayoutKind.Sequential)]
 struct MONITORINFO { public int Size; public RECT Monitor, Work; public uint Flags; }
 
+// INPUT with only the KEYBDINPUT fields used; Size covers the union's largest member (MOUSEINPUT) on x64.
+[StructLayout(LayoutKind.Explicit, Size = 40)]
+struct INPUT { [FieldOffset(0)] public uint Type; [FieldOffset(8)] public ushort Vk; [FieldOffset(12)] public uint Flags; }
+
 [StructLayout(LayoutKind.Sequential)]
 struct MSG { public nint Hwnd; public uint Message; public nint WParam, LParam; public uint Time; public POINT Pt; public uint Private; }
 
@@ -109,6 +113,8 @@ static unsafe partial class Native
 
     // Hotkeys
     public const uint MOD_CONTROL = 2, MOD_NOREPEAT = 0x4000;
+    public const uint INPUT_KEYBOARD = 1, KEYEVENTF_KEYUP = 2;
+    public const ushort VK_LCONTROL = 0xA2, VK_RCONTROL = 0xA3;
     public const uint TPM_RIGHTBUTTON = 2, TPM_NONOTIFY = 0x80, TPM_RETURNCMD = 0x100;
 
     // Combo box / list view
@@ -205,10 +211,19 @@ static unsafe partial class Native
     [LibraryImport("user32.dll")] public static partial nint SetFocus(nint h);
     [LibraryImport("user32.dll")] public static partial int RegisterHotKey(nint h, int id, uint modifiers, uint vk);
     [LibraryImport("user32.dll")] public static partial int UnregisterHotKey(nint h, int id);
+    [LibraryImport("user32.dll")] public static partial uint SendInput(uint count, INPUT* inputs, int size);
+    [LibraryImport("user32.dll")] public static partial nint GetForegroundWindow();
+    [LibraryImport("user32.dll")] public static partial nint GetTopWindow(nint h);
+    [LibraryImport("user32.dll")] public static partial int IsWindow(nint h);
 
     // VirtualDesktopAccessor.dll (github.com/Ciantic/VirtualDesktopAccessor), loaded from the executable's folder on first call
     [LibraryImport("VirtualDesktopAccessor.dll")] public static partial int GetDesktopCount();
     [LibraryImport("VirtualDesktopAccessor.dll")] public static partial int GoToDesktopNumber(int number);
+    [LibraryImport("VirtualDesktopAccessor.dll")] public static partial int GetCurrentDesktopNumber();
+    [LibraryImport("VirtualDesktopAccessor.dll")] public static partial int IsPinnedWindow(nint h);
+    [LibraryImport("VirtualDesktopAccessor.dll")] public static partial int IsWindowOnCurrentVirtualDesktop(nint h);
+    [LibraryImport("VirtualDesktopAccessor.dll")] public static partial void RegisterPostMessageHook(nint listener, uint message);
+    [LibraryImport("VirtualDesktopAccessor.dll")] public static partial void RestartVirtualDesktopAccessor();
 
     public static nint Instance => GetModuleHandleW(null);
 

@@ -5,10 +5,10 @@ namespace Winmangrus;
 
 static unsafe class Program
 {
-    const uint WM_TRAY = WM_APP + 1;
+    const uint WM_TRAY = WM_APP + 1, WM_DESKTOPCHANGED = WM_APP + 2; // the latter is posted by VirtualDesktopAccessor.dll
     const int IdManage = 1, IdAutoRestore = 2, IdStartup = 3, IdExit = 4, IdReleases = 5, IdHotkeyBase = 100, IdProfileBase = 1000;
     const int MaxDesktops = 9;
-    const nint TimerAutoRestore = 1;
+    const nint TimerAutoRestore = 1, TimerReleaseCtrl = 2;
     public const string Title = "winmangrus";
     const string ReleasesUrl = "https://github.com/vdasus/winmangrus/releases";
     public static readonly string Version = typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "?";
@@ -32,6 +32,8 @@ static unsafe class Program
     static nint _hwnd;
     static uint _taskbarCreated;
     static readonly HashSet<int> _hotkeys = []; // desktop numbers whose Ctrl+N is registered
+    static readonly Dictionary<int, nint> _lastActive = []; // 0-based desktop number -> window active when a hotkey left it
+    static bool _desktopHook, _switching; // _switching: the next WM_DESKTOPCHANGED comes from our hotkey
     public static nint Icon { get; private set; }
 
     static int Main(string[] args)
@@ -134,7 +136,15 @@ static unsafe class Program
                     SetTimer(h, TimerAutoRestore, 5000, 0);
                     return 1;
                 case WM_HOTKEY:
-                    GoToDesktopNumber((int)w - 1); // hotkey id is the 1-based desktop number
+                    SwitchDesktop((int)w - 1); // hotkey id is the 1-based desktop number
+                    return 0;
+                case WM_TIMER when w == TimerReleaseCtrl:
+                    KillTimer(h, TimerReleaseCtrl);
+                    ReleaseCtrl();
+                    return 0;
+                case WM_DESKTOPCHANGED when _switching:
+                    _switching = false;
+                    ActivateLast((int)l); // lParam is the new 0-based desktop number
                     return 0;
                 case WM_TIMER when w == TimerAutoRestore:
                     KillTimer(h, TimerAutoRestore);
@@ -145,13 +155,52 @@ static unsafe class Program
                     PostQuitMessage(0);
                     return 0;
             }
-            if (m == _taskbarCreated && m != 0) AddTrayIcon(); // Explorer restarted
+            if (m == _taskbarCreated && m != 0) // Explorer restarted
+            {
+                AddTrayIcon();
+                if (_desktopHook) RestartVirtualDesktopAccessor(); // otherwise it keeps talking to the dead Explorer
+            }
         }
         catch (Exception ex)
         {
             MessageBoxW(0, ex.Message, Title, MB_OK | MB_ICONERROR);
         }
         return DefWindowProcW(h, m, w, l);
+    }
+
+    static void SwitchDesktop(int n)
+    {
+        if (!_desktopHook)
+        {
+            RegisterPostMessageHook(_hwnd, WM_DESKTOPCHANGED);
+            _desktopHook = true;
+        }
+        int current = GetCurrentDesktopNumber();
+        var active = GetForegroundWindow();
+        if (active != 0 && IsPinnedWindow(active) != 1) _lastActive[current] = active;
+        _switching = n != current && n < GetDesktopCount(); // otherwise no WM_DESKTOPCHANGED follows
+
+        // Ctrl is still down: the window that saw Ctrl pressed loses focus and never gets its key-up, so Ctrl sticks.
+        // Release it now and once more after the switch, as the former AutoHotkey script did.
+        ReleaseCtrl();
+        GoToDesktopNumber(n);
+        SetTimer(_hwnd, TimerReleaseCtrl, 100, 0);
+    }
+
+    static void ReleaseCtrl()
+    {
+        INPUT* keys = stackalloc INPUT[2];
+        keys[0] = new INPUT { Type = INPUT_KEYBOARD, Vk = VK_LCONTROL, Flags = KEYEVENTF_KEYUP };
+        keys[1] = new INPUT { Type = INPUT_KEYBOARD, Vk = VK_RCONTROL, Flags = KEYEVENTF_KEYUP };
+        SendInput(2, keys, sizeof(INPUT));
+    }
+
+    /// <summary>Focuses the window that was active when a hotkey last left desktop n, else the topmost one there.</summary>
+    static void ActivateLast(int n)
+    {
+        var h = _lastActive.GetValueOrDefault(n);
+        if (h == 0 || IsWindow(h) == 0 || IsWindowOnCurrentVirtualDesktop(h) != 1) h = Layout.TopWindowOnCurrentDesktop();
+        if (h != 0) SetForegroundWindow(h);
     }
 
     static bool RegisterDesktopHotkey(int n) =>
